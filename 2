@@ -1,0 +1,223 @@
+import { useState } from "react";
+
+const notes = [
+  { icon: "💥", title: "1. The Big Bang Theory", body: `The universe is approximately 13.8 billion years old. The Big Bang Theory states that the universe began as an incredibly hot, dense point called a singularity, which suddenly expanded. As it cooled, hydrogen and helium gas clouds formed. These clouds collapsed under gravity to create the first stars and galaxies. This is the most widely accepted scientific explanation for the origin of the universe.` },
+  { icon: "🌌", title: "2. Formation of the Solar System", body: `About 4.6 billion years ago, a rotating cloud of gas and dust called a solar nebula collapsed under gravity. It spun faster and flattened into a disk. The hot, dense center ignited nuclear fusion and became the Sun. The leftover material in the disk clumped together through accretion (colliding and sticking), forming planetesimals, which eventually merged into the planets we know today, including Earth.` },
+  { icon: "🌍", title: "3. Formation of the Early Earth", body: `Earth formed ~4.5 billion years ago through accretion of planetesimals. Constant meteor impacts and radioactive decay kept early Earth in a molten state — this period is the Hadean Eon. Heavy elements like iron and nickel sank to the center (forming the core), while lighter silicate rocks floated to the surface. This process is called differentiation and gave Earth its layered structure: crust, mantle, outer core, and inner core.` },
+  { icon: "🌕", title: "4. Formation of the Moon", body: `The Giant Impact Hypothesis is the most accepted theory for the Moon's origin. About 4.5 billion years ago, a Mars-sized body called Theia collided with the early Earth. The debris blasted into orbit and gradually clumped together under gravity to form the Moon. Evidence: the Moon has a similar composition to Earth's mantle and lacks a large iron core, which supports this theory.` },
+  { icon: "🌫️", title: "5. Development of Earth's Atmosphere", body: `Earth's first (primary) atmosphere of hydrogen and helium was blown away by solar wind. A secondary atmosphere formed through volcanic outgassing — releasing water vapor, CO₂, nitrogen, and methane from Earth's interior. As Earth cooled, water vapor condensed to form the oceans. Billions of years later, cyanobacteria began photosynthesis, gradually adding oxygen to the atmosphere, eventually creating conditions suitable for complex life.` },
+  { icon: "🔵", title: "6. Earth's Internal Structure", body: `Earth has 4 main layers:\n• Crust: Thin outer layer (5–70 km). Continental crust is thicker; oceanic crust is denser.\n• Mantle: Thickest layer (~2,900 km) of semi-solid silicate rock. The asthenosphere (upper mantle) flows slowly, driving plate tectonics.\n• Outer Core: Liquid iron and nickel (~2,200 km thick). Its movement generates Earth's magnetic field.\n• Inner Core: Solid iron and nickel (~1,200 km radius) at ~5,000°C — solid due to immense pressure.` },
+  { icon: "⏳", title: "7. The Geological Time Scale", body: `Earth's 4.5-billion-year history is divided into eons:\n• Hadean (4.6–4.0 bya): Molten Earth, heavy meteor bombardment, no life.\n• Archean (4.0–2.5 bya): First stable crust, first oceans, first life (bacteria).\n• Proterozoic (2.5 bya–541 mya): Oxygen builds up, first complex cells and multicellular life.\n• Phanerozoic (541 mya–present): Explosion of complex life — fish, plants, dinosaurs, mammals, and humans.` },
+];
+
+const questions = [
+  { type: "mcq", q: "How old is the universe according to the Big Bang Theory?", opts: ["4.5 billion years", "6 billion years", "13.8 billion years", "20 billion years"], a: "13.8 billion years", exp: "The Big Bang Theory estimates the universe is about 13.8 billion years old, based on cosmic background radiation measurements." },
+  { type: "tf", q: "The Sun formed before the planets in our solar system.", a: "True", exp: "The center of the collapsing solar nebula became the Sun first. The leftover disk material then slowly formed the planets through accretion." },
+  { type: "mcq", q: "What process caused Earth to develop distinct layers (crust, mantle, core)?", opts: ["Accretion", "Outgassing", "Differentiation", "Photosynthesis"], a: "Differentiation", exp: "Differentiation caused dense iron and nickel to sink to Earth's center (core), while lighter materials floated up to form the mantle and crust." },
+  { type: "short", q: "What is the name of the Mars-sized body that collided with early Earth to form the Moon?", a: "Theia", alts: ["theia"], exp: "According to the Giant Impact Hypothesis, a body called Theia collided with Earth ~4.5 billion years ago, and the ejected debris formed the Moon." },
+  { type: "tf", q: "Earth's original primary atmosphere was rich in oxygen.", a: "False", exp: "The primary atmosphere was hydrogen and helium. Oxygen only accumulated much later through photosynthesis by cyanobacteria." },
+  { type: "mcq", q: "Which layer of Earth generates its magnetic field?", opts: ["Inner Core", "Crust", "Mantle", "Outer Core"], a: "Outer Core", exp: "The liquid iron and nickel in the outer core circulates and creates electric currents, generating Earth's magnetic field." },
+  { type: "short", q: "What is the name of the rotating cloud of gas and dust that formed our solar system?", a: "Solar Nebula", alts: ["solar nebula", "nebula", "the solar nebula"], exp: "A solar nebula is a cloud of gas and dust. Its gravitational collapse ~4.6 billion years ago gave birth to the Sun and all the planets." },
+  { type: "mcq", q: "During which eon did the first life appear on Earth?", opts: ["Hadean", "Archean", "Proterozoic", "Phanerozoic"], a: "Archean", exp: "Simple bacteria first appeared during the Archean Eon (~3.5 billion years ago), after Earth's crust stabilized and oceans had formed." },
+  { type: "tf", q: "The inner core of the Earth is liquid due to its extreme heat.", a: "False", exp: "Despite temperatures of ~5,000°C, the inner core is SOLID because the immense pressure from layers above prevents it from melting." },
+  { type: "mcq", q: "Which process released gases from Earth's interior to form the secondary atmosphere?", opts: ["Accretion", "Differentiation", "Solar wind", "Volcanic outgassing"], a: "Volcanic outgassing", exp: "Volcanic outgassing released water vapor, CO₂, and nitrogen from Earth's interior. Water condensed into oceans; photosynthesis later added oxygen." },
+];
+
+export default function App() {
+  const [screen, setScreen] = useState("home"); // home | notes | quiz | results
+  const [openNote, setOpenNote] = useState(null);
+  const [qIndex, setQIndex] = useState(0);
+  const [selected, setSelected] = useState(null);
+  const [typed, setTyped] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+  const [showExp, setShowExp] = useState(false);
+  const [score, setScore] = useState(0);
+  const [log, setLog] = useState([]);
+
+  const q = questions[qIndex];
+
+  function submit() {
+    let correct = false;
+    if (q.type === "short") {
+      const n = typed.trim().toLowerCase();
+      correct = n === q.a.toLowerCase() || (q.alts || []).includes(n);
+    } else {
+      correct = selected === q.a;
+    }
+    if (correct) setScore(s => s + 1);
+    setLog(l => [...l, { correct, given: q.type === "short" ? typed : selected }]);
+    setSubmitted(true);
+  }
+
+  function next() {
+    if (qIndex + 1 >= questions.length) { setScreen("results"); }
+    else { setQIndex(i => i + 1); setSelected(null); setTyped(""); setSubmitted(false); setShowExp(false); }
+  }
+
+  function restart() {
+    setScreen("home"); setQIndex(0); setSelected(null); setTyped("");
+    setSubmitted(false); setShowExp(false); setScore(0); setLog([]); setOpenNote(null);
+  }
+
+  const pct = Math.round((score / questions.length) * 100);
+  const grade = pct >= 90 ? "A" : pct >= 80 ? "B" : pct >= 70 ? "C" : pct >= 60 ? "D" : "F";
+
+  // ── HOME ──
+  if (screen === "home") return (
+    <div style={{ minHeight: "100vh", background: "#0d1117", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24, fontFamily: "Georgia, serif", color: "#e6ddd0" }}>
+      <style>{`@keyframes pop{0%{transform:scale(0.8);opacity:0}100%{transform:scale(1);opacity:1}} .hbtn{transition:all .2s;} .hbtn:hover{transform:translateY(-2px);filter:brightness(1.1);}`}</style>
+      <div style={{ animation: "pop .6s ease", textAlign: "center", maxWidth: 480 }}>
+        <div style={{ fontSize: 72, marginBottom: 16 }}>🌍</div>
+        <h1 style={{ fontSize: 26, color: "#f59e0b", margin: "0 0 8px", letterSpacing: 1 }}>Chapter 2</h1>
+        <h2 style={{ fontSize: 20, color: "#e6ddd0", margin: "0 0 12px", fontWeight: "normal" }}>The Origin of the Earth</h2>
+        <p style={{ color: "#6b7280", fontSize: 13, marginBottom: 36 }}>Geography · High School · Study + Quiz</p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <button className="hbtn" onClick={() => setScreen("notes")} style={{ padding: "16px 24px", background: "#f59e0b", color: "#0d1117", border: "none", borderRadius: 14, fontWeight: 700, fontSize: 16, cursor: "pointer" }}>
+            📖 Study the Notes First
+          </button>
+          <button className="hbtn" onClick={() => setScreen("quiz")} style={{ padding: "16px 24px", background: "transparent", color: "#f59e0b", border: "2px solid #f59e0b", borderRadius: 14, fontWeight: 700, fontSize: 16, cursor: "pointer" }}>
+            📝 Jump Straight to Quiz
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ── NOTES ──
+  if (screen === "notes") return (
+    <div style={{ minHeight: "100vh", background: "#0d1117", padding: 20, fontFamily: "Georgia, serif", color: "#e6ddd0" }}>
+      <style>{`@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}} .notecard:hover{border-color:#f59e0b !important;} .nbtn:hover{background:#d97706 !important;}`}</style>
+      <div style={{ maxWidth: 680, margin: "0 auto" }}>
+        <button onClick={() => setScreen("home")} style={{ background: "none", border: "none", color: "#6b7280", cursor: "pointer", fontSize: 13, marginBottom: 16 }}>← Back</button>
+        <h2 style={{ color: "#f59e0b", margin: "0 0 4px" }}>📖 Study Notes</h2>
+        <p style={{ color: "#6b7280", fontSize: 13, marginBottom: 20 }}>Tap any topic to read the explanation</p>
+        {notes.map((n, i) => (
+          <div key={i} className="notecard" onClick={() => setOpenNote(openNote === i ? null : i)}
+            style={{ background: "#161b22", border: `1px solid ${openNote === i ? "#f59e0b" : "#30363d"}`, borderRadius: 12, marginBottom: 10, cursor: "pointer", transition: "border-color .2s", animation: `fadeIn .4s ease ${i * 0.05}s both` }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 18px" }}>
+              <span style={{ fontWeight: 700, fontSize: 15, color: openNote === i ? "#f59e0b" : "#e6ddd0" }}>{n.icon} {n.title}</span>
+              <span style={{ color: "#6b7280", transition: "transform .2s", display: "inline-block", transform: openNote === i ? "rotate(180deg)" : "none" }}>▾</span>
+            </div>
+            {openNote === i && (
+              <div style={{ padding: "0 18px 18px", borderTop: "1px solid #30363d" }}>
+                <p style={{ color: "#c9c0b4", lineHeight: 1.85, fontSize: 14, whiteSpace: "pre-line", margin: "14px 0 0" }}>{n.body}</p>
+              </div>
+            )}
+          </div>
+        ))}
+        <button className="nbtn" onClick={() => setScreen("quiz")} style={{ width: "100%", marginTop: 10, padding: 15, background: "#f59e0b", color: "#0d1117", border: "none", borderRadius: 12, fontWeight: 700, fontSize: 15, cursor: "pointer", transition: "background .2s" }}>
+          ✅ I'm Ready — Take the Quiz →
+        </button>
+      </div>
+    </div>
+  );
+
+  // ── QUIZ ──
+  if (screen === "quiz") return (
+    <div style={{ minHeight: "100vh", background: "#0d1117", padding: 20, fontFamily: "Georgia, serif", color: "#e6ddd0" }}>
+      <style>{`@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}} .optbtn:hover{border-color:#f59e0b !important;background:rgba(245,158,11,0.08) !important;} .subbtn:hover{filter:brightness(1.1);} `}</style>
+      <div style={{ maxWidth: 640, margin: "0 auto", animation: "fadeIn .4s ease" }}>
+        <button onClick={() => setScreen("notes")} style={{ background: "none", border: "none", color: "#6b7280", cursor: "pointer", fontSize: 13, marginBottom: 16 }}>← Back to Notes</button>
+
+        {/* Progress bar */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#6b7280", marginBottom: 6 }}>
+            <span>Question {qIndex + 1} of {questions.length}</span>
+            <span>Score: {score}</span>
+          </div>
+          <div style={{ height: 6, background: "#21262d", borderRadius: 99 }}>
+            <div style={{ height: "100%", background: "#f59e0b", borderRadius: 99, width: `${(qIndex / questions.length) * 100}%`, transition: "width .5s" }} />
+          </div>
+        </div>
+
+        <div style={{ background: "#161b22", border: "1px solid #30363d", borderRadius: 16, padding: "26px 22px" }}>
+          {/* Badge */}
+          <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 99, color: "white", background: q.type === "mcq" ? "#2563eb" : q.type === "tf" ? "#7c3aed" : "#059669" }}>
+            {q.type === "mcq" ? "MULTIPLE CHOICE" : q.type === "tf" ? "TRUE / FALSE" : "SHORT ANSWER"}
+          </span>
+
+          <p style={{ fontSize: 16, fontWeight: 600, lineHeight: 1.65, margin: "16px 0 20px", color: "#f0e8dc" }}>{q.q}</p>
+
+          {/* MCQ options */}
+          {q.type === "mcq" && q.opts.map((o, i) => {
+            let bg = "#0d1117", border = "1px solid #30363d", col = "#c9c0b4";
+            if (submitted) {
+              if (o === q.a) { bg = "rgba(74,222,128,.1)"; border = "1px solid #4ade80"; col = "#4ade80"; }
+              else if (o === selected) { bg = "rgba(248,113,113,.1)"; border = "1px solid #f87171"; col = "#f87171"; }
+            } else if (selected === o) { bg = "rgba(245,158,11,.1)"; border = "1px solid #f59e0b"; col = "#f59e0b"; }
+            return <button key={i} className={submitted ? "" : "optbtn"} disabled={submitted} onClick={() => setSelected(o)}
+              style={{ display: "block", width: "100%", textAlign: "left", padding: "11px 15px", marginBottom: 9, background: bg, border, borderRadius: 10, color: col, cursor: submitted ? "default" : "pointer", fontSize: 14, transition: "all .2s" }}>
+              <b style={{ marginRight: 8 }}>{String.fromCharCode(65 + i)}.</b>{o}
+              {submitted && o === q.a && <span style={{ float: "right" }}>✓</span>}
+              {submitted && o === selected && o !== q.a && <span style={{ float: "right" }}>✗</span>}
+            </button>;
+          })}
+
+          {/* True/False */}
+          {q.type === "tf" && ["True", "False"].map((o, i) => {
+            let bg = "#0d1117", border = "1px solid #30363d", col = "#c9c0b4";
+            if (submitted) {
+              if (o === q.a) { bg = "rgba(74,222,128,.1)"; border = "1px solid #4ade80"; col = "#4ade80"; }
+              else if (o === selected) { bg = "rgba(248,113,113,.1)"; border = "1px solid #f87171"; col = "#f87171"; }
+            } else if (selected === o) { bg = "rgba(245,158,11,.1)"; border = "1px solid #f59e0b"; col = "#f59e0b"; }
+            return <button key={i} className={submitted ? "" : "optbtn"} disabled={submitted} onClick={() => setSelected(o)}
+              style={{ display: "inline-block", width: "calc(50% - 5px)", marginRight: i === 0 ? 10 : 0, padding: 13, textAlign: "center", background: bg, border, borderRadius: 10, color: col, cursor: submitted ? "default" : "pointer", fontSize: 15, fontWeight: 700, transition: "all .2s" }}>{o}</button>;
+          })}
+
+          {/* Short answer */}
+          {q.type === "short" && <>
+            <input disabled={submitted} value={typed} onChange={e => setTyped(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && typed.trim() && !submitted && submit()}
+              placeholder="Type your answer and press Enter..."
+              style={{ width: "100%", padding: "12px 14px", background: "#0d1117", border: submitted ? (log[log.length - 1]?.correct ? "1px solid #4ade80" : "1px solid #f87171") : "1px solid #30363d", borderRadius: 10, color: "#f0e8dc", fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+            {submitted && <p style={{ margin: "8px 0 0", fontSize: 13, color: log[log.length - 1]?.correct ? "#4ade80" : "#f87171" }}>
+              {log[log.length - 1]?.correct ? "✓ Correct!" : `✗ Correct answer: ${q.a}`}
+            </p>}
+          </>}
+
+          {/* Correct / Wrong feedback */}
+          {submitted && q.type !== "short" && (
+            <div style={{ marginTop: 12, padding: "9px 13px", borderRadius: 8, background: log[log.length - 1]?.correct ? "rgba(74,222,128,.08)" : "rgba(248,113,113,.08)", border: `1px solid ${log[log.length - 1]?.correct ? "#4ade8055" : "#f8717155"}` }}>
+              <span style={{ fontWeight: 700, color: log[log.length - 1]?.correct ? "#4ade80" : "#f87171", fontSize: 14 }}>
+                {log[log.length - 1]?.correct ? "✓ Correct!" : "✗ Incorrect"}
+              </span>
+            </div>
+          )}
+
+          {/* Explanation */}
+          {submitted && <>
+            <button onClick={() => setShowExp(e => !e)} style={{ marginTop: 10, background: "none", border: "1px solid #f59e0b55", color: "#f59e0b", borderRadius: 8, padding: "6px 14px", fontSize: 13, cursor: "pointer" }}>
+              {showExp ? "Hide" : "💡 Show"} Explanation
+            </button>
+            {showExp && <div style={{ marginTop: 10, padding: "12px 14px", background: "rgba(245,158,11,.07)", borderLeft: "3px solid #f59e0b", borderRadius: 8 }}>
+              <p style={{ margin: 0, fontSize: 13, color: "#c9c0b4", lineHeight: 1.75 }}>{q.exp}</p>
+            </div>}
+          </>}
+
+          {/* Buttons */}
+          <div style={{ marginTop: 20 }}>
+            {!submitted
+              ? <button className="subbtn" onClick={submit} disabled={q.type === "short" ? !typed.trim() : !selected}
+                  style={{ width: "100%", padding: 13, background: (q.type === "short" ? !typed.trim() : !selected) ? "#21262d" : "#f59e0b", color: (q.type === "short" ? !typed.trim() : !selected) ? "#6b7280" : "#0d1117", border: "none", borderRadius: 12, fontWeight: 700, fontSize: 15, cursor: (q.type === "short" ? !typed.trim() : !selected) ? "not-allowed" : "pointer", transition: "all .2s" }}>
+                  Submit Answer
+                </button>
+              : <button className="subbtn" onClick={next}
+                  style={{ width: "100%", padding: 13, background: "#f59e0b", color: "#0d1117", border: "none", borderRadius: 12, fontWeight: 700, fontSize: 15, cursor: "pointer", transition: "all .2s" }}>
+                  {qIndex + 1 >= questions.length ? "See My Results →" : "Next Question →"}
+                </button>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ── RESULTS ──
+  return (
+    <div style={{ minHeight: "100vh", background: "#0d1117", padding: 20, fontFamily: "Georgia, serif", color: "#e6ddd0" }}>
+      <style>{`@keyframes pop{0%{transform:scale(.7);opacity:0}100%{transform:scale(1);opacity:1}} .rbtn:hover{filter:brightness(1.1);}`}</style>
+      <div style={{ maxWidth: 640, margin: "0 auto" }}>
+        <div style={{ textAlign: "center", background: "#161b22", border: "1px solid #30363d", borderRadius: 16, padding: "36px 24px", marginBottom: 20, animation: "pop .5s ease" }}>
+          <div style={{ fontSize: 56, marginBottom: 10 }}>🎓</div>
+          <div style={{ fontSize: 60, fontWeight: 900, color: pct >= 70 ? "#4ade80" : "#f87171", lineHeight: 1 }}>{grade}</div>
+          <div sty
